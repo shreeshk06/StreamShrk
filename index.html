@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamShrk</title>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Landing Page */
+        #landing-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mode-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .mode-btn {
+            background-color: var(--surface-color);
+            color: var(--text);
+            border: 2px solid transparent;
+            padding: 30px 50px;
+            font-size: 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* App Interface */
+        #app-interface {
+            display: none;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            flex-grow: 1;
+            max-width: 800px;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--surface-color);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        button.action-btn {
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button.action-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Drop Zone & Player */
+        #drop-zone {
+            border: 2px dashed var(--text-muted);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            background-color: var(--surface-color);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        #drop-zone.dragover {
+            border-color: var(--primary);
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+        }
+
+        #player-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none; /* Hidden until media is loaded */
+            position: relative;
+        }
+
+        video, iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Group Mode UI */
+        #group-ui {
+            display: none;
+            background-color: var(--surface-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="landing-page">
+        <div class="logo">StreamShrk</div>
+        <p>Drop media, paste links, and stream flawlessly.</p>
+        <div class="mode-container">
+            <button class="mode-btn" onclick="startApp('solo')">
+                <span>👤</span> Solo
+                <span style="font-size: 0.9rem; color: var(--text-muted);">Stream by yourself</span>
+            </button>
+            <button class="mode-btn" onclick="startApp('group')">
+                <span>👥</span> Group
+                <span style="font-size: 0.9rem; color: var(--text-muted);">Sync with friends</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="app-interface">
+        <div class="header">
+            <div class="logo" style="font-size: 2rem; margin: 0; cursor: pointer;" onclick="location.reload()">Shrk</div>
+            <div class="search-bar">
+                <input type="text" id="media-input" placeholder="Paste YouTube link, direct media URL, or search web...">
+                <button class="action-btn" onclick="handleInput()">Play / Search</button>
+            </div>
+        </div>
+
+        <div id="group-ui">
+            <div>
+                <strong>Room ID: </strong> <span id="room-id" style="color: var(--primary);">Generating...</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="join-room-input" placeholder="Enter Room ID" style="padding: 8px;">
+                <button class="action-btn" onclick="joinRoom()" style="padding: 8px 16px;">Join</button>
+            </div>
+        </div>
+
+        <div id="drop-zone">
+            <h2>Drag & Drop Media Here</h2>
+            <p>Supports video files (.mp4, .webm) or drop a link directly</p>
+        </div>
+
+        <div id="player-container">
+            </div>
+    </div>
+
+    <script>
+        const landingPage = document.getElementById('landing-page');
+        const appInterface = document.getElementById('app-interface');
+        const groupUi = document.getElementById('group-ui');
+        const playerContainer = document.getElementById('player-container');
+        const dropZone = document.getElementById('drop-zone');
+        const mediaInput = document.getElementById('media-input');
+        let currentMode = 'solo';
+
+        // 1. App Initialization
+        function startApp(mode) {
+            currentMode = mode;
+            landingPage.style.display = 'none';
+            appInterface.style.display = 'flex';
+            
+            if (mode === 'group') {
+                groupUi.style.display = 'flex';
+                // Mock generating a room ID for UI purposes
+                document.getElementById('room-id').innerText = Math.random().toString(36).substring(2, 9).toUpperCase();
+            }
+        }
+
+        // 2. Input Handling (Links vs Search)
+        function handleInput() {
+            const query = mediaInput.value.trim();
+            if (!query) return;
+
+            // Simple URL Regex
+            const urlPattern = /^(https?:\/\/)?([\w\d\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?(\?.*)?$/i;
+
+            if (urlPattern.test(query)) {
+                loadMedia(query);
+            } else {
+                // If it's not a URL, perform a web search via DuckDuckGo or Google in a new tab
+                window.open(`https://duckduckgo.com/?q=${encodeURIComponent(query + ' video')}`, '_blank');
+            }
+        }
+
+        // 3. Media Loading Logic
+        function loadMedia(url, isLocalFile = false) {
+            dropZone.style.display = 'none';
+            playerContainer.style.display = 'block';
+            playerContainer.innerHTML = ''; // Clear previous
+
+            // Handle YouTube URLs
+            const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})/);
+            
+            if (ytMatch && ytMatch[1]) {
+                const videoId = ytMatch[1];
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                iframe.allowFullscreen = true;
+                playerContainer.appendChild(iframe);
+                syncMedia('youtube', videoId); // Hook for Group sync
+            } 
+            // Handle Direct Links / Local Files
+            else {
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                video.autoplay = true;
+                playerContainer.appendChild(video);
+                
+                // Add event listeners for syncing play/pause in Group mode
+                if(currentMode === 'group') {
+                    video.addEventListener('play', () => syncEvent('play', video.currentTime));
+                    video.addEventListener('pause', () => syncEvent('pause', video.currentTime));
+                }
+            }
+        }
+
+        // 4. Drag and Drop Implementation
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+
+            // Handle dropped local files
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('video/')) {
+                    const fileURL = URL.createObjectURL(file);
+                    loadMedia(fileURL, true);
+                } else {
+                    alert("Please drop a valid video file.");
+                }
+            } 
+            // Handle dropped text/links
+            else {
+                const textData = e.dataTransfer.getData('text');
+                if (textData) {
+                    mediaInput.value = textData;
+                    handleInput();
+                }
+            }
+        });
+
+        // 5. Group Syncing Mockup (Requires PeerJS/WebSockets for actual data transfer)
+        function joinRoom() {
+            const roomId = document.getElementById('join-room-input').value;
+            if(roomId) {
+                alert(`Connecting to Room: ${roomId}...\n(Note: True P2P data connections require adding the PeerJS library to handle WebRTC).`);
+            }
+        }
+
+        function syncMedia(type, data) {
+            if (currentMode !== 'group') return;
+            console.log(`[Sync] Emitting new media load: ${type} - ${data}`);
+            // Logic to send this data over WebSockets/WebRTC goes here
+        }
+
+        function syncEvent(action, time) {
+            if (currentMode !== 'group') return;
+            console.log(`[Sync] Emitting ${action} at ${time}s`);
+            // Logic to sync play/pause/seek across peers goes here
+        }
+    </script>
+</body>
+</html>
